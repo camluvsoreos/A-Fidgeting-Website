@@ -1,2 +1,2 @@
-# A-Fidgeting-Website-
+# This is a Fidgeting Website.
 A website where you get to fidget about with different fidget toys.
