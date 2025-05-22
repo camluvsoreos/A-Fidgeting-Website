@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Fidgeting Website.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="https://static.thenounproject.com/png/tiny-cute-monster-icon-1225239-512.png">
+    <style>
+    /* please dont steal my code this took alot of hard work to work into. */ 
+    /* thanks :) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .fidget-container {
+            display: grid;
+            gap: 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .fidget-card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .fidget-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pop-it-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .pop-it-bubble {
+            width: 40px;
+            height: 40px;
+            background-color: #cbd5e0;
+            border-radius: 9999px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.1s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+        }
+
+        .pop-it-bubble.popped {
+            background-color: #6366f1;
+            transform: scale(0.9);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .spinner-container {
+            width: 150px; /* Increased size to accommodate fidget spinner shape */
+            height: 150px;
+            position: relative;
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            /* The SVG itself will handle the shape and color */
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center; /* Crucial for correct rotation */
+        }
+
+        .spinner-lobe {
+            fill: #f59e0b; /* Amber-500 for the lobes */
+            stroke: #d97706; /* Darker amber for border */
+            stroke-width: 2;
+        }
+
+        .spinner-center {
+            fill: #475569; /* Slate-600 for the center bearing */
+            stroke: #334155; /* Darker slate for border */
+            stroke-width: 2;
+        }
+
+
+        .slider-wrapper {
+            width: 100%;
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 80%;
+            -webkit-appearance: none;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+            cursor: pointer;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        input[type="range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #10b981;
+            border-radius: 9999px;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="range]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #10b981;
+            border-radius: 9999px;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #slider-value {
+            margin-top: 0.5rem;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        .color-box {
+            width: 100px;
+            height: 100px;
+            background-color: #3b82f6;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: background-color 0.2s ease-in-out;
+            margin-top: 1rem;
+        }
+
+        .reset-button {
+            background-color: #60a5fa;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.1s ease-in-out, transform 0.1s ease-in-out;
+            margin-top: 2rem;
+            text-align: center;
+            width: fit-content;
+            align-self: center;
+        }
+
+        .reset-button:active {
+            background-color: #3b82f6;
+            transform: translateY(1px);
+        }
+
+        @media (max-width: 768px) {
+            .fidget-container {
+                grid-template-columns: 1fr;
+            }
+            .fidget-card {
+                padding: 1rem;
+            }
+            .pop-it-bubble {
+                width: 35px;
+                height: 35px;
+            }
+            .spinner-container {
+                width: 120px; /* Adjust size for smaller screens */
+                height: 120px;
+            }
+            input[type="range"] {
+                width: 90%;
+            }
+            .color-box {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+    <h1 class="text-4xl font-extrabold text-gray-800 mb-8 text-center">A Fidgeting Website</h1>
+    <p>A Fidgeting Website made by cam, hope yall like it :)</p>
+    <br></br>
+
+    <div class="fidget-container">
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Pop It</h2>
+            <div class="pop-it-grid" id="pop-it-grid">
+                </div>
+            <button class="reset-button mt-4" onclick="resetPopIt()">Reset Pop It</button>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Spinner</h2>
+            <div class="spinner-container">
+                <svg id="spinner" viewBox="0 0 150 150" class="spinner">
+                    <circle cx="75" cy="75" r="15" class="spinner-center"></circle>
+                    
+                    <circle cx="75" cy="25" r="20" class="spinner-lobe"></circle>
+                    <circle cx="120" cy="95" r="20" class="spinner-lobe"></circle>
+                    <circle cx="30" cy="95" r="20" class="spinner-lobe"></circle>
+
+                    </svg>
+            </div>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Slider</h2>
+            <div class="slider-wrapper">
+                <input type="range" id="fidget-slider" min="0" max="100" value="50">
+                <p id="slider-value" class="text-lg">Value: 50</p>
+            </div>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Color Changer</h2>
+            <div class="color-box" id="color-box"></div>
+        </div>
+    </div>
+
+    <script>
+        let audioContextStarted = false;
+
+        function ensureAudioContext() {
+            if (!audioContextStarted) {
+                Tone.start().then(() => {
+                    audioContextStarted = true;
+                    console.log('AudioContext started!');
+                }).catch(e => {
+                    console.error('Failed to start AudioContext:', e);
+                });
+            }
+        }
+
+        document.documentElement.addEventListener('mousedown', ensureAudioContext, { once: true });
+        document.documentElement.addEventListener('touchstart', ensureAudioContext, { once: true });
+
+
+        const popSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 0.001,
+                decay: 0.05,
+                sustain: 0.01,
+                release: 0.05
+            }
+        }).toDestination();
+
+        const spinnerFilter = new Tone.Filter(200, "lowpass").toDestination();
+        const spinnerNoiseSource = new Tone.Noise("white").connect(spinnerFilter).start();
+        spinnerNoiseSource.volume.value = -Infinity;
+
+        const spinnerLFO = new Tone.LFO("16n", 0, 100).connect(spinnerFilter.frequency).start();
+
+        const sliderSynth = new Tone.Synth({
+            oscillator: { type: "triangle" },
+            envelope: {
+                attack: 0.001,
+                decay: 0.02,
+                sustain: 0.01,
+                release: 0.02
+            }
+        }).toDestination();
+
+        const colorSynth = new Tone.PluckSynth().toDestination();
+
+
+        const popItGrid = document.getElementById('pop-it-grid');
+        const numBubbles = 16;
+
+        function createPopItBubbles() {
+            popItGrid.innerHTML = '';
+            for (let i = 0; i < numBubbles; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('pop-it-bubble');
+                bubble.dataset.popped = 'false';
+                bubble.addEventListener('click', () => {
+                    if (bubble.dataset.popped === 'false') {
+                        bubble.classList.add('popped');
+                        bubble.dataset.popped = 'true';
+                        popSynth.triggerAttackRelease("C5", "8n");
+                    } else {
+                        bubble.classList.remove('popped');
+                        bubble.dataset.popped = 'false';
+                        popSynth.triggerAttackRelease("C4", "8n");
+                    }
+                });
+                popItGrid.appendChild(bubble);
+            }
+        }
+
+        function resetPopIt() {
+            const bubbles = document.querySelectorAll('.pop-it-bubble');
+            bubbles.forEach(bubble => {
+                bubble.classList.remove('popped');
+                bubble.dataset.popped = 'false';
+            });
+        }
+
+        const spinner = document.getElementById('spinner'); // This now refers to the SVG element
+        let isSpinning = false;
+        let startAngle = 0;
+        let startX, startY;
+        let currentRotation = 0;
+        let velocity = 0;
+        let lastTime = 0;
+        let animationFrameId;
+
+        let lastMoveTime = 0;
+        let lastMoveAngleRad = 0;
+
+        function animateSpinner(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (isSpinning) {
+                currentRotation += velocity * (deltaTime / 16);
+                spinner.style.transform = `rotate(${currentRotation}deg)`;
+
+                const mappedFreq = Math.min(2000, 200 + Math.abs(velocity) * 50);
+                spinnerFilter.frequency.value = mappedFreq;
+                spinnerNoiseSource.volume.value = Math.min(-5, -20 + Math.abs(velocity) * 5);
+
+                spinnerLFO.frequency.value = Math.min(10, Math.abs(velocity) / 20);
+
+                velocity *= 0.99;
+                if (Math.abs(velocity) < 0.05) {
+                    velocity = 0;
+                    isSpinning = false;
+                    cancelAnimationFrame(animationFrameId);
+                    spinnerNoiseSource.volume.value = -Infinity;
+                }
+            } else {
+                spinnerNoiseSource.volume.value = -Infinity;
+            }
+            animationFrameId = requestAnimationFrame(animateSpinner);
+        }
+
+        spinner.addEventListener('mousedown', (e) => {
+            ensureAudioContext();
+            isSpinning = false;
+            cancelAnimationFrame(animationFrameId);
+            startX = e.clientX;
+            startY = e.clientY;
+            startAngle = currentRotation;
+            spinner.style.cursor = 'grabbing';
+
+            const spinnerRect = spinner.getBoundingClientRect();
+            const centerX = spinnerRect.left + spinnerRect.width / 2;
+            const centerY = spinnerRect.top + spinnerRect.height / 2;
+            lastMoveAngleRad = Math.atan2(startY - centerY, startX - centerX);
+            lastMoveTime = e.timeStamp;
+            velocity = 0;
+
+            function onMouseMove(moveEvent) {
+                const currentX = moveEvent.clientX;
+                const currentY = moveEvent.clientY;
+                const currentTime = moveEvent.timeStamp;
+
+                const spinnerRect = spinner.getBoundingClientRect();
+                const centerX = spinnerRect.left + spinnerRect.width / 2;
+                const centerY = spinnerRect.top + spinnerRect.height / 2;
+
+                const currentAngleRad = Math.atan2(currentY - centerY, currentX - centerX);
+                
+                let deltaAngleRad = currentAngleRad - lastMoveAngleRad;
+
+                if (deltaAngleRad > Math.PI) deltaAngleRad -= 2 * Math.PI;
+                if (deltaAngleRad < -Math.PI) deltaAngleRad += 2 * Math.PI;
+
+                const deltaTimeForVelocity = currentTime - lastMoveTime;
+
+                if (deltaTimeForVelocity > 0) {
+                    const instantaneousAngularVelocity = (deltaAngleRad * (180 / Math.PI)) / deltaTimeForVelocity;
+                    velocity = instantaneousAngularVelocity * 100;
+                }
+
+                const initialClickAngleRad = Math.atan2(startY - centerY, startX - centerX);
+                currentRotation = startAngle + (currentAngleRad - initialClickAngleRad) * (180 / Math.PI);
+                spinner.style.transform = `rotate(${currentRotation}deg)`;
+
+                lastMoveAngleRad = currentAngleRad;
+                lastMoveTime = currentTime;
+            }
+
+            function onMouseUp() {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                spinner.style.cursor = 'grab';
+                isSpinning = true;
+                lastTime = performance.now();
+                animationFrameId = requestAnimationFrame(animateSpinner);
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        spinner.addEventListener('touchstart', (e) => {
+            ensureAudioContext();
+            e.preventDefault();
+            isSpinning = false;
+            cancelAnimationFrame(animationFrameId);
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startAngle = currentRotation;
+            spinner.style.cursor = 'grabbing';
+
+            const spinnerRect = spinner.getBoundingClientRect();
+            const centerX = spinnerRect.left + spinnerRect.width / 2;
+            const centerY = spinnerRect.top + spinnerRect.height / 2;
+            lastMoveAngleRad = Math.atan2(startY - centerY, startX - centerX);
+            lastMoveTime = e.timeStamp;
+            velocity = 0;
+
+            function onTouchMove(moveEvent) {
+                const moveTouch = moveEvent.touches[0];
+                const currentX = moveTouch.clientX;
+                const currentY = moveTouch.clientY;
+                const currentTime = moveEvent.timeStamp;
+
+                const spinnerRect = spinner.getBoundingClientRect();
+                const centerX = spinnerRect.left + spinnerRect.width / 2;
+                const centerY = spinnerRect.top + spinnerRect.height / 2;
+
+                const currentAngleRad = Math.atan2(currentY - centerY, currentX - centerX);
+                
+                let deltaAngleRad = currentAngleRad - lastMoveAngleRad;
+
+                if (deltaAngleRad > Math.PI) deltaAngleRad -= 2 * Math.PI;
+                if (deltaAngleRad < -Math.PI) deltaAngleRad += 2 * Math.PI;
+
+                const deltaTimeForVelocity = currentTime - lastMoveTime;
+
+                if (deltaTimeForVelocity > 0) {
+                    const instantaneousAngularVelocity = (deltaAngleRad * (180 / Math.PI)) / deltaTimeForVelocity;
+                    velocity = instantaneousAngularVelocity * 100;
+                }
+
+                const initialClickAngleRad = Math.atan2(startY - centerY, startX - centerX);
+                currentRotation = startAngle + (currentAngleRad - initialClickAngleRad) * (180 / Math.PI);
+                spinner.style.transform = `rotate(${currentRotation}deg)`;
+
+                lastMoveAngleRad = currentAngleRad;
+                lastMoveTime = currentTime;
+            }
+
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+                spinner.style.cursor = 'grab';
+                isSpinning = true;
+                lastTime = performance.now();
+                animationFrameId = requestAnimationFrame(animateSpinner);
+            }
+
+            document.addEventListener('touchmove', onTouchMove);
+            document.addEventListener('touchend', onTouchEnd);
+        });
+
+
+        const fidgetSlider = document.getElementById('fidget-slider');
+        const sliderValueDisplay = document.getElementById('slider-value');
+
+        fidgetSlider.addEventListener('input', () => {
+            ensureAudioContext();
+            sliderValueDisplay.textContent = `Value: ${fidgetSlider.value}`;
+            sliderSynth.triggerAttackRelease("C4", "32n");
+        });
+
+        const colorBox = document.getElementById('color-box');
+
+        function getRandomVibrantColor() {
+            const hue = Math.floor(Math.random() * 360);
+            const saturation = 70 + Math.floor(Math.random() * 30);
+            const lightness = 50 + Math.floor(Math.random() * 10);
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        colorBox.addEventListener('click', () => {
+            ensureAudioContext();
+            const randomColor = getRandomVibrantColor();
+            colorBox.style.backgroundColor = randomColor;
+            colorSynth.triggerAttackRelease("G5", "4n");
+        });
+
+        window.onload = function() {
+            createPopItBubbles();
+            animationFrameId = requestAnimationFrame(animateSpinner);
+        };
+    </script>
+</body>
+</html>
