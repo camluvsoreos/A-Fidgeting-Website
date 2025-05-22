@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fidget Fun</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Custom styles for the fidget elements to enhance visuals and responsiveness */
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font for a clean look */
+            background-color: #f0f4f8; /* Light blue-gray background for a calming feel */
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        .fidget-container {
+            display: grid;
+            gap: 1.5rem; /* Spacing between fidget cards */
+            max-width: 1200px; /* Max width for the grid */
+            width: 100%; /* Full width within max-width */
+            /* Responsive grid: 1 column on small screens, adjusts to 2 or more on larger screens */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .fidget-card {
+            background-color: #ffffff; /* White background for cards */
+            border-radius: 1.5rem; /* Rounded corners for a friendly look */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Soft shadow */
+            padding: 1.5rem; /* Internal padding */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px; /* Ensure consistent card height */
+            transition: transform 0.2s ease-in-out; /* Smooth hover effect */
+        }
+
+        .fidget-card:hover {
+            transform: translateY(-5px); /* Lift card slightly on hover */
+        }
+
+        /* Pop It specific styles */
+        .pop-it-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns for pop it bubbles */
+            gap: 0.5rem; /* Spacing between bubbles */
+            margin-top: 1rem;
+        }
+
+        .pop-it-bubble {
+            width: 40px;
+            height: 40px;
+            background-color: #cbd5e0; /* Light gray unpopped state */
+            border-radius: 9999px; /* Fully rounded (circle) */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1); /* Inner shadow for depth */
+            transition: background-color 0.1s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+        }
+
+        .pop-it-bubble.popped {
+            background-color: #6366f1; /* Indigo-500 when popped */
+            transform: scale(0.9); /* Slightly shrink when popped */
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1); /* Subtle inner shadow for popped state */
+        }
+
+        /* Spinner specific styles */
+        .spinner-container {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            margin-top: 1rem;
+        }
+
+        .spinner {
+            width: 100%;
+            height: 100%;
+            background-color: #f59e0b; /* Amber-500 color for the spinner */
+            border-radius: 9999px; /* Fully rounded (circle) */
+            cursor: grab; /* Cursor indicates draggable */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow for 3D effect */
+            transition: transform 0.1s ease-out; /* Smooth transition for spinning */
+            transform-origin: center center; /* Ensure rotation is from the center */
+        }
+
+        /* Slider specific styles */
+        .slider-wrapper {
+            width: 100%;
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 80%; /* Width of the slider track */
+            -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+            height: 12px;
+            background: #e2e8f0; /* Gray-200 track color */
+            border-radius: 6px;
+            outline: none; /* Remove outline on focus */
+            opacity: 0.7; /* Slightly transparent when not hovered */
+            transition: opacity .2s;
+            cursor: pointer;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1; /* Fully opaque on hover */
+        }
+
+        input[type="range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #10b981; /* Emerald-500 thumb color */
+            border-radius: 9999px; /* Circular thumb */
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="range]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #10b981; /* Emerald-500 thumb color */
+            border-radius: 9999px; /* Circular thumb */
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #slider-value {
+            margin-top: 0.5rem;
+            font-weight: bold;
+            color: #475569; /* Slate-600 for text */
+        }
+
+        /* Drawing Pad specific styles */
+        .drawing-pad-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        #drawing-canvas {
+            border: 2px solid #cbd5e0; /* Light gray border */
+            border-radius: 0.75rem; /* Rounded corners for canvas */
+            background-color: #f8fafc; /* Very light background for drawing area */
+            cursor: crosshair;
+            touch-action: none; /* Prevent default touch actions like scrolling/zooming */
+            width: 100%; /* Make canvas responsive */
+            max-width: 300px; /* Max width for consistency across cards */
+            height: 200px; /* Fixed height for now, can be made dynamic if needed */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .drawing-controls {
+            display: flex;
+            flex-wrap: wrap; /* Allow controls to wrap on smaller screens */
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .drawing-controls button {
+            background-color: #60a5fa; /* Blue-400 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.1s ease-in-out, transform 0.1s ease-in-out;
+        }
+
+        .drawing-controls button:active {
+            background-color: #3b82f6; /* Darker blue on click */
+            transform: translateY(1px);
+        }
+
+        /* Color Changer specific styles */
+        .color-box {
+            width: 100px;
+            height: 100px;
+            background-color: #3b82f6; /* Initial blue color */
+            border-radius: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: background-color 0.2s ease-in-out; /* Smooth color transition */
+            margin-top: 1rem;
+        }
+
+        /* Reset Button styles (general purpose) */
+        .reset-button {
+            background-color: #60a5fa; /* Blue-400 for reset buttons */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.1s ease-in-out, transform 0.1s ease-in-out;
+            margin-top: 2rem;
+            text-align: center;
+            width: fit-content;
+            align-self: center; /* Center the button within its flex container */
+        }
+
+        .reset-button:active {
+            background-color: #3b82f6; /* Darker blue on click */
+            transform: translateY(1px); /* Push button down on click */
+        }
+
+        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+        @media (max-width: 768px) {
+            .fidget-container {
+                grid-template-columns: 1fr; /* Single column layout on small screens */
+            }
+            .fidget-card {
+                padding: 1rem; /* Reduce padding on smaller cards */
+            }
+            .pop-it-bubble {
+                width: 35px;
+                height: 35px;
+            }
+            .spinner-container {
+                width: 100px;
+                height: 100px;
+            }
+            input[type="range"] {
+                width: 90%; /* Increase slider width on small screens */
+            }
+            .drawing-controls button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            .color-box {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+    <h1 class="text-4xl font-extrabold text-gray-800 mb-8 text-center">Fidget Fun!</h1>
+
+    <div class="fidget-container">
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Pop It</h2>
+            <div class="pop-it-grid" id="pop-it-grid">
+                </div>
+            <button class="reset-button mt-4" onclick="resetPopIt()">Reset Pop It</button>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Spinner</h2>
+            <div class="spinner-container">
+                <div class="spinner" id="spinner"></div>
+            </div>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Slider</h2>
+            <div class="slider-wrapper">
+                <input type="range" id="fidget-slider" min="0" max="100" value="50">
+                <p id="slider-value" class="text-lg">Value: 50</p>
+            </div>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Drawing Pad</h2>
+            <div class="drawing-pad-container">
+                <canvas id="drawing-canvas"></canvas>
+                <div class="drawing-controls">
+                    <input type="color" id="pen-color" value="#3b82f6" class="rounded-md w-10 h-10 cursor-pointer border-none p-0">
+                    <button id="clear-canvas">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="fidget-card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Color Changer</h2>
+            <div class="color-box" id="color-box"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global flag to ensure Tone.start() is called only once after a user gesture
+        let audioContextStarted = false;
+
+        /**
+         * Ensures the Tone.js AudioContext is started/resumed.
+         * This is crucial for audio playback in modern browsers, which require a user gesture.
+         */
+        function ensureAudioContext() {
+            if (!audioContextStarted) {
+                Tone.start().then(() => {
+                    audioContextStarted = true;
+                    console.log('AudioContext started!');
+                }).catch(e => {
+                    console.error('Failed to start AudioContext:', e);
+                });
+            }
+        }
+
+        // Add event listeners to the document to trigger AudioContext start on first interaction
+        document.documentElement.addEventListener('mousedown', ensureAudioContext, { once: true });
+        document.documentElement.addEventListener('touchstart', ensureAudioContext, { once: true });
+
+
+        // --- Tone.js Instruments Setup ---
+
+        // Pop It Synth: A short, percussive click sound
+        const popSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 0.001,
+                decay: 0.05,
+                sustain: 0.01,
+                release: 0.05
+            }
+        }).toDestination();
+
+        // Spinner Sound: White noise passed through a filter, with filter frequency modulated by LFO
+        const spinnerFilter = new Tone.Filter(200, "lowpass").toDestination();
+        const spinnerNoiseSource = new Tone.Noise("white").connect(spinnerFilter).start();
+        spinnerNoiseSource.volume.value = -Infinity; // Start muted, volume will be controlled dynamically
+
+        // LFO (Low Frequency Oscillator) for subtle pitch modulation on the spinner sound
+        const spinnerLFO = new Tone.LFO("16n", 0, 100).connect(spinnerFilter.frequency).start();
+
+        // Slider Synth: A very short, subtle 'thunk' sound
+        const sliderSynth = new Tone.Synth({
+            oscillator: { type: "triangle" },
+            envelope: {
+                attack: 0.001,
+                decay: 0.02,
+                sustain: 0.01,
+                release: 0.02
+            }
+        }).toDestination();
+
+        // Drawing Pad Synth: A subtle, continuous tone for drawing
+        const drawingSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0.5,
+                release: 0.2
+            }
+        }).toDestination();
+        drawingSynth.volume.value = -15; // Keep volume lower for continuous sound
+
+        // Color Changer Synth: A pluck synth for a chime-like sound
+        const colorSynth = new Tone.PluckSynth().toDestination();
+
+
+        // --- Pop It Logic ---
+        const popItGrid = document.getElementById('pop-it-grid');
+        const numBubbles = 16; // Defines a 4x4 grid of bubbles
+
+        /**
+         * Creates and appends the pop-it bubbles to the grid.
+         * Each bubble has a click listener to toggle its 'popped' state and play a sound.
+         */
+        function createPopItBubbles() {
+            popItGrid.innerHTML = ''; // Clear any existing bubbles before creating new ones
+            for (let i = 0; i < numBubbles; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('pop-it-bubble');
+                bubble.dataset.popped = 'false'; // Custom data attribute to track if the bubble is popped
+                bubble.addEventListener('click', () => {
+                    if (bubble.dataset.popped === 'false') {
+                        bubble.classList.add('popped');
+                        bubble.dataset.popped = 'true';
+                        popSynth.triggerAttackRelease("C5", "8n"); // Play a high-pitched pop sound
+                    } else {
+                        bubble.classList.remove('popped');
+                        bubble.dataset.popped = 'false';
+                        popSynth.triggerAttackRelease("C4", "8n"); // Play a slightly lower pitched un-pop sound
+                    }
+                });
+                popItGrid.appendChild(bubble); // Add the bubble to the grid container
+            }
+        }
+
+        /**
+         * Resets all pop-it bubbles to their unpopped state.
+         */
+        function resetPopIt() {
+            const bubbles = document.querySelectorAll('.pop-it-bubble');
+            bubbles.forEach(bubble => {
+                bubble.classList.remove('popped');
+                bubble.dataset.popped = 'false';
+            });
+        }
+
+        // --- Spinner Logic ---
+        const spinner = document.getElementById('spinner');
+        let isSpinning = false; // Flag to indicate if the spinner is currently animating
+        let startAngle = 0; // Initial angle when dragging starts
+        let startX, startY; // Mouse/touch starting coordinates
+        let currentRotation = 0; // Current rotation angle of the spinner
+        let velocity = 0; // Angular velocity of the spinner
+        let lastTime = 0; // Timestamp of the last animation frame
+        let animationFrameId; // ID returned by requestAnimationFrame for cancellation
+
+        /**
+         * Animation loop for the spinner.
+         * Applies velocity and friction to simulate spinning, and updates spinner sound.
+         * @param {DOMHighResTimeStamp} timestamp - The current time provided by requestAnimationFrame.
+         */
+        function animateSpinner(timestamp) {
+            if (!lastTime) lastTime = timestamp; // Initialize lastTime on the first frame
+            const deltaTime = timestamp - lastTime; // Time elapsed since the last frame
+            lastTime = timestamp;
+
+            if (isSpinning) {
+                // Update rotation based on velocity and delta time
+                currentRotation += velocity * (deltaTime / 16); // Adjust for typical 60fps (1000ms/60frames ≈ 16ms/frame)
+                spinner.style.transform = `rotate(${currentRotation}deg)`;
+
+                // Map velocity to filter frequency and volume for the spinner sound
+                const mappedFreq = Math.min(2000, 200 + Math.abs(velocity) * 50); // Max 2000Hz
+                spinnerFilter.frequency.value = mappedFreq;
+                spinnerNoiseSource.volume.value = Math.min(-5, -20 + Math.abs(velocity) * 5); // Max -5dB, louder with more speed
+
+                // Adjust LFO frequency for more intense whirring at higher speeds
+                spinnerLFO.frequency.value = Math.min(10, Math.abs(velocity) / 20); // Faster LFO at higher speeds, max 10Hz
+
+                // Apply friction to gradually slow down the spinner
+                velocity *= 0.98; // Reduce velocity by 2% each frame
+                if (Math.abs(velocity) < 0.1) { // Stop animation if velocity is very low
+                    velocity = 0;
+                    isSpinning = false;
+                    cancelAnimationFrame(animationFrameId); // Stop the animation loop
+                    spinnerNoiseSource.volume.value = -Infinity; // Mute when stopped
+                }
+            } else {
+                spinnerNoiseSource.volume.value = -Infinity; // Ensure muted if not spinning
+            }
+            animationFrameId = requestAnimationFrame(animateSpinner); // Request next frame
+        }
+
+        /**
+         * Handles the start of a mouse drag on the spinner.
+         * @param {MouseEvent} e - The mousedown event.
+         */
+        spinner.addEventListener('mousedown', (e) => {
+            ensureAudioContext(); // Ensure audio context is started
+            isSpinning = false; // Stop any ongoing animation when a new drag starts
+            cancelAnimationFrame(animationFrameId); // Cancel previous animation frame
+            startX = e.clientX;
+            startY = e.clientY;
+            startAngle = currentRotation; // Capture current rotation as the starting point for this drag
+            spinner.style.cursor = 'grabbing'; // Change cursor to indicate grabbing
+
+            /**
+             * Handles mouse movement during a drag.
+             * Calculates the angle difference and updates spinner rotation.
+             * @param {MouseEvent} moveEvent - The mousemove event.
+             */
+            function onMouseMove(moveEvent) {
+                // Get the bounding box of the spinner to calculate its center
+                const spinnerRect = spinner.getBoundingClientRect();
+                const centerX = spinnerRect.left + spinnerRect.width / 2;
+                const centerY = spinnerRect.top + spinnerRect.height / 2;
+
+                const angle1 = Math.atan2(startY - centerY, startX - centerX);
+                const angle2 = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
+
+                const angleDiff = (angle2 - angle1) * (180 / Math.PI);
+
+                currentRotation = startAngle + angleDiff;
+                spinner.style.transform = `rotate(${currentRotation}deg)`;
+
+                velocity = angleDiff / (moveEvent.timeStamp - e.timeStamp + 1);
+            }
+
+            /**
+             * Handles the end of a mouse drag.
+             * Starts the spinner animation with the calculated velocity.
+             */
+            function onMouseUp() {
+                document.removeEventListener('mousemove', onMouseMove); // Remove listeners to prevent memory leaks
+                document.removeEventListener('mouseup', onMouseUp);
+                spinner.style.cursor = 'grab'; // Restore cursor
+                isSpinning = true; // Allow animation to start
+                lastTime = performance.now(); // Reset lastTime for a smooth animation start
+                animationFrameId = requestAnimationFrame(animateSpinner); // Start the animation loop
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Touch events for spinner (similar logic to mouse events)
+        spinner.addEventListener('touchstart', (e) => {
+            ensureAudioContext(); // Ensure audio context is started
+            e.preventDefault(); // Prevent default touch behavior (e.g., scrolling)
+            isSpinning = false;
+            cancelAnimationFrame(animationFrameId);
+            const touch = e.touches[0]; // Get the first touch point
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startAngle = currentRotation;
+            spinner.style.cursor = 'grabbing';
+
+            /**
+             * Handles touch movement during a drag.
+             * @param {TouchEvent} moveEvent - The touchmove event.
+             */
+            function onTouchMove(moveEvent) {
+                const moveTouch = moveEvent.touches[0];
+                const spinnerRect = spinner.getBoundingClientRect();
+                const centerX = spinnerRect.left + spinnerRect.width / 2;
+                const centerY = spinnerRect.top + spinnerRect.height / 2;
+
+                const angle1 = Math.atan2(startY - centerY, startX - centerX);
+                const angle2 = Math.atan2(moveTouch.clientY - centerY, moveTouch.clientX - centerX);
+
+                const angleDiff = (angle2 - angle1) * (180 / Math.PI);
+
+                currentRotation = startAngle + angleDiff;
+                spinner.style.transform = `rotate(${currentRotation}deg)`;
+
+                velocity = angleDiff / (moveEvent.timeStamp - e.timeStamp + 1);
+            }
+
+            /**
+             * Handles the end of a touch drag.
+             */
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+                spinner.style.cursor = 'grab';
+                isSpinning = true;
+                lastTime = performance.now();
+                animationFrameId = requestAnimationFrame(animateSpinner);
+            }
+
+            document.addEventListener('touchmove', onTouchMove);
+            document.addEventListener('touchend', onTouchEnd);
+        });
+
+
+        // --- Slider Logic ---
+        const fidgetSlider = document.getElementById('fidget-slider');
+        const sliderValueDisplay = document.getElementById('slider-value');
+
+        /**
+         * Updates the displayed slider value whenever the slider is moved and plays a sound.
+         */
+        fidgetSlider.addEventListener('input', () => {
+            ensureAudioContext(); // Ensure audio context is started
+            sliderValueDisplay.textContent = `Value: ${fidgetSlider.value}`;
+            sliderSynth.triggerAttackRelease("C4", "32n"); // Play a short sound
+        });
+
+        // --- Drawing Pad Logic ---
+        const drawingCanvas = document.getElementById('drawing-canvas');
+        const ctx = drawingCanvas.getContext('2d');
+        const clearCanvasButton = document.getElementById('clear-canvas');
+        const penColorInput = document.getElementById('pen-color');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentPenColor = penColorInput.value; // Initial pen color
+
+        // Set canvas dimensions explicitly for drawing context
+        function setCanvasDimensions() {
+            // Set canvas drawing surface size to match its displayed size
+            drawingCanvas.width = drawingCanvas.offsetWidth;
+            drawingCanvas.height = drawingCanvas.offsetHeight;
+            // Re-apply drawing settings after resizing
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = currentPenColor;
+        }
+
+        /**
+         * Draws a line on the canvas.
+         * @param {number} x1 - Starting X coordinate.
+         * @param {number} y1 - Starting Y coordinate.
+         * @param {number} x2 - Ending X coordinate.
+         * @param {number} y2 - Ending Y coordinate.
+         */
+        function draw(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            drawingSynth.triggerAttackRelease("C3", "16n"); // Play a subtle drawing sound
+        }
+
+        /**
+         * Gets the mouse/touch coordinates relative to the canvas.
+         * @param {Event} event - The mouse or touch event.
+         * @returns {{x: number, y: number}} The coordinates.
+         */
+        function getCoordinates(event) {
+            const rect = drawingCanvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Mouse events for drawing
+        drawingCanvas.addEventListener('mousedown', (e) => {
+            ensureAudioContext(); // Ensure audio context is started
+            isDrawing = true;
+            [lastX, lastY] = [getCoordinates(e).x, getCoordinates(e).y];
+        });
+
+        drawingCanvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const { x, y } = getCoordinates(e);
+            draw(lastX, lastY, x, y);
+            [lastX, lastY] = [x, y];
+        });
+
+        drawingCanvas.addEventListener('mouseup', () => isDrawing = false);
+        drawingCanvas.addEventListener('mouseout', () => isDrawing = false); // Stop drawing if mouse leaves canvas
+
+        // Touch events for drawing
+        drawingCanvas.addEventListener('touchstart', (e) => {
+            ensureAudioContext(); // Ensure audio context is started
+            e.preventDefault(); // Prevent scrolling
+            isDrawing = true;
+            [lastX, lastY] = [getCoordinates(e).x, getCoordinates(e).y];
+        });
+
+        drawingCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevent scrolling
+            if (!isDrawing) return;
+            const { x, y } = getCoordinates(e);
+            draw(lastX, lastY, x, y);
+            [lastX, lastY] = [x, y];
+        });
+
+        drawingCanvas.addEventListener('touchend', () => isDrawing = false);
+        drawingCanvas.addEventListener('touchcancel', () => isDrawing = false);
+
+        // Clear canvas button
+        clearCanvasButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            drawingSynth.triggerAttackRelease("C2", "8n"); // Play a clear sound
+        });
+
+        // Pen color change
+        penColorInput.addEventListener('input', (e) => {
+            currentPenColor = e.target.value;
+            ctx.strokeStyle = currentPenColor;
+        });
+
+        // --- Color Changer Logic ---
+        const colorBox = document.getElementById('color-box');
+
+        /**
+         * Generates a random vibrant HSL color string.
+         * @returns {string} A random HSL color string (e.g., "hsl(120, 80%, 55%)").
+         */
+        function getRandomVibrantColor() {
+            const hue = Math.floor(Math.random() * 360); // 0-359 degrees
+            const saturation = 70 + Math.floor(Math.random() * 30); // 70-99% saturation for vibrancy
+            const lightness = 50 + Math.floor(Math.random() * 10); // 50-59% lightness for good visibility
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        /**
+         * Changes the background color of the color box to a random vibrant color, playing a sound.
+         */
+        colorBox.addEventListener('click', () => {
+            ensureAudioContext(); // Ensure audio context is started
+            const randomColor = getRandomVibrantColor(); // Get a truly random vibrant color
+            colorBox.style.backgroundColor = randomColor;
+            colorSynth.triggerAttackRelease("G5", "4n"); // Play a chime-like sound
+        });
+
+        // --- Initialization ---
+        /**
+         * Ensures all fidget elements are properly initialized once the window has fully loaded.
+         */
+        window.onload = function() {
+            createPopItBubbles(); // Create the initial set of pop-it bubbles
+            // Start the spinner animation loop. It will only animate when 'isSpinning' is true.
+            animationFrameId = requestAnimationFrame(animateSpinner);
+            setCanvasDimensions(); // Initialize canvas dimensions
+            window.addEventListener('resize', setCanvasDimensions); // Adjust canvas on resize
+        };
+    </script>
+</body>
+</html>
